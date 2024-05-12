@@ -1,0 +1,100 @@
+[?25l[?2004h   Paths                             
+                                     
+  /pet                               
+> /pet/findByStatus                  
+  /pet/findByTags                    
+  /pet/{petId}                       
+  /pet/{petId}/uploadImage           
+  /store/inventory                   
+  /store/order                       
+  /store/order/{orderId}             
+  /user                              
+  /user/createWithList               
+  /user/login                        
+  /user/logout                       
+  /user/{username}                   
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     
+  ↑/k up • ↓/j down • q quit • ? more[300D[2K[?2004l[?25h[?1002l[?1003l[?1006l
