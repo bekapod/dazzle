@@ -60,6 +60,31 @@ func TestOutputAfterScrolling(t *testing.T) {
 	teatest.RequireEqualOutput(t, out)
 }
 
+func TestOutputAfterFiltering(t *testing.T) {
+	doc := loadDoc()
+	m := createModel(doc)
+	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(300, 100))
+	for _, r := range "/user" {
+		tm.Send(tea.KeyMsg{
+			Type:  tea.KeyRunes,
+			Runes: []rune{r},
+		})
+	}
+	tm.Send(tea.KeyMsg{
+		Type: tea.KeyEnter,
+	})
+	tm.Send(tea.KeyMsg{
+		Type:  tea.KeyRunes,
+		Runes: []rune("q"),
+	})
+
+	out, err := io.ReadAll(tm.FinalOutput(t, teatest.WithFinalTimeout(time.Second*2)))
+	if err != nil {
+		t.Error(err)
+	}
+	teatest.RequireEqualOutput(t, out)
+}
+
 func TestModel(t *testing.T) {
 	doc := loadDoc()
 	tm := teatest.NewTestModel(t, createModel(doc), teatest.WithInitialTermSize(300, 100))
@@ -72,13 +97,20 @@ func TestModel(t *testing.T) {
 	if !ok {
 		t.Fatalf("final model has the wrong type: %T", fm)
 	}
-	if len(m.paths.Items()) != 13 {
-		t.Errorf("m.paths.Items len != 13: %d", len(m.paths.Items()))
+	if len(m.endpoints.Items()) != 19 {
+		t.Errorf("m.endpoints.Items len != 19: %d", len(m.endpoints.Items()))
 	}
-	if m.paths.Items()[5].(path).path != "/store/inventory" {
-		t.Errorf("m.paths.Items[5].path != /store/inventory: %s", m.paths.Items()[5].(path).path)
+
+	sample := m.endpoints.Items()[5].(endpoint)
+	if sample.path != "/pet/{petId}" {
+		t.Errorf("m.endpoints.Items[5].path != /pet/{petId}: %s", sample.path)
 	}
-	if m.paths.Items()[9].(path).path != "/user/createWithList" {
-		t.Errorf("m.paths.Items[9].path != /user/createWithList: %s", m.paths.Items()[9].(path).path)
+
+	if sample.method != "POST" {
+		t.Errorf("m.endpoints.Items[5].method != POST: %s", sample.method)
+	}
+
+	if sample.summary != "Updates a pet in the store with form data" {
+		t.Errorf("m.endpoints.Items[5].summary != Updates a pet in the store with form data: %s", sample.summary)
 	}
 }

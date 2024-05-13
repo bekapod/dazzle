@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -22,60 +20,80 @@ var (
 	listItemSelectedStyle = lipgloss.NewStyle().PaddingLeft(0).Foreground(lipgloss.Color("170"))
 )
 
-type path struct {
-	path string
+type Method string
+
+const (
+	Get    Method = "GET"
+	Post   Method = "POST"
+	Put    Method = "PUT"
+	Patch  Method = "PATCH"
+	Delete Method = "DELETE"
+)
+
+type endpoint struct {
+	path    string
+	method  Method
+	summary string
 }
 
-func (p path) Title() string       { return p.path }
-func (p path) Description() string { return "" }
-func (p path) FilterValue() string { return p.path }
-
-type pathDelegate struct{}
-
-func (d pathDelegate) Height() int                             { return 1 }
-func (d pathDelegate) Spacing() int                            { return 0 }
-func (d pathDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
-func (d pathDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(path)
-	if !ok {
-		return
-	}
-
-	str := i.Title()
-
-	fn := listItemStyle.Render
-	if index == m.Index() {
-		fn = func(s ...string) string {
-			return listItemSelectedStyle.Render("> " + strings.Join(s, " "))
-		}
-	}
-
-	fmt.Fprint(w, fn(str))
+func (e endpoint) Title() string {
+	return fmt.Sprintf("%s %s", e.method, e.path)
 }
+func (e endpoint) Description() string { return e.summary }
+func (e endpoint) FilterValue() string { return e.path }
 
 type model struct {
-	paths list.Model
+	endpoints list.Model
 }
 
 func createModel(doc *oas.T) model {
 	// TODO: be good if we could validate the document, but my test doc isn't valid
 
-	paths := make([]list.Item, 0)
-	for p := range doc.Paths.Map() {
-		paths = append(paths, path{path: p})
+	endpoints := make([]list.Item, 0)
+	for path, pathItem := range doc.Paths.Map() {
+		if endpointItem := pathItem.Get; endpointItem != nil {
+			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Get})
+		}
+
+		if endpointItem := pathItem.Post; endpointItem != nil {
+			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Post})
+		}
+
+		if endpointItem := pathItem.Put; endpointItem != nil {
+			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Put})
+		}
+
+		if endpointItem := pathItem.Patch; endpointItem != nil {
+			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Patch})
+		}
+
+		if endpointItem := pathItem.Delete; endpointItem != nil {
+			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Delete})
+		}
 	}
-	sort.Slice(paths, func(i, j int) bool {
-		return paths[i].(path).path < paths[j].(path).path
+
+	methodOrder := map[Method]int{
+		Get:    1,
+		Post:   2,
+		Put:    3,
+		Patch:  4,
+		Delete: 5,
+	}
+	sort.Slice(endpoints, func(i, j int) bool {
+		// sort by endpoint path first then by method
+		if endpoints[i].(endpoint).path == endpoints[j].(endpoint).path {
+			return methodOrder[endpoints[i].(endpoint).method] < methodOrder[endpoints[j].(endpoint).method]
+		}
+
+		return endpoints[i].(endpoint).path < endpoints[j].(endpoint).path
 	})
 
-	pathsList := list.New(paths, pathDelegate{}, 0, 0)
-	pathsList.Title = "Paths"
-	pathsList.SetShowStatusBar(false)
-	pathsList.SetFilteringEnabled(false)
-	pathsList.SetShowPagination(false)
+	endpointsList := list.New(endpoints, list.NewDefaultDelegate(), 0, 0)
+	endpointsList.Title = "endpoints"
+	endpointsList.SetShowPagination(false)
 
 	return model{
-		paths: pathsList,
+		endpoints: endpointsList,
 	}
 }
 
@@ -89,10 +107,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
-		m.paths.SetSize(msg.Width-h, msg.Height-v)
+		m.endpoints.SetSize(msg.Width-h, msg.Height-v)
 
 	case tea.KeyMsg:
-		if m.paths.FilterState() == list.Filtering {
+		if m.endpoints.FilterState() == list.Filtering {
 			break
 		}
 
@@ -100,26 +118,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	newListModel, cmd := m.paths.Update(msg)
-	m.paths = newListModel
+	newListModel, cmd := m.endpoints.Update(msg)
+	m.endpoints = newListModel
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
-	return appStyle.Render(m.paths.View())
+	return appStyle.Render(m.endpoints.View())
 }
 
 func main() {
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
 	}
+	defer f.Close()
 
 	raw_url := os.Args[1]
 	parsed_url, err := url.ParseRequestURI(raw_url)
