@@ -3,25 +3,25 @@
   “user” 7 items • 12 filtered                                     
                                                                    
 │ POST /user                                                       
-│ Create user                                                      
+│ Create user user                                                 
                                                                    
   GET /user/login                                                  
-  Logs user into the system                                        
+  Logs user into the system user                                   
                                                                    
   GET /user/logout                                                 
-  Logs out current logged in user session                          
+  Logs out current logged in user session user                     
                                                                    
   GET /user/{username}                                             
-  Get user by user name                                            
+  Get user by user name user                                       
                                                                    
   PUT /user/{username}                                             
-  Update user                                                      
+  Update user user                                                 
                                                                    
   DELETE /user/{username}                                          
-  Delete user                                                      
+  Delete user user                                                 
                                                                    
   POST /user/createWithList                                        
-  Creates list of users with given input array                     
+  Creates list of users with given input array user                
                                                                    
                                                                    
                                                                    

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -25,45 +26,58 @@ const (
 	Delete Method = "DELETE"
 )
 
-type endpoint struct {
+type operation struct {
 	path    string
 	method  Method
 	summary string
+	tags    []string
 }
 
-func (e endpoint) Title() string {
+func (e operation) Title() string {
 	return fmt.Sprintf("%s %s", e.method, e.path)
 }
-func (e endpoint) Description() string { return e.summary }
-func (e endpoint) FilterValue() string { return e.path }
+
+func (e operation) Description() string {
+	return fmt.Sprintf("%s %s", e.summary, strings.Join(e.tags, ","))
+}
+func (e operation) FilterValue() string { return e.path }
+
+func NewOperation(path string, method Method, operationItem *oas.Operation) operation {
+	return operation{
+		path:    path,
+		summary: operationItem.Summary,
+		method:  method,
+		tags:    operationItem.Tags,
+	}
+}
 
 type model struct {
-	endpoints list.Model
+	operations list.Model
 }
 
 func createModel(doc *oas.T) model {
 	// TODO: be good if we could validate the document, but my test doc isn't valid
 
-	endpoints := make([]list.Item, 0)
+	operations := make([]list.Item, 0)
 	for path, pathItem := range doc.Paths.Map() {
-		if endpointItem := pathItem.Get; endpointItem != nil {
-			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Get})
+		if operationItem := pathItem.Get; operationItem != nil {
+			operations = append(operations, NewOperation(path, Get, operationItem))
 		}
 
-		if endpointItem := pathItem.Post; endpointItem != nil {
-			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Post})
+		if operationItem := pathItem.Post; operationItem != nil {
+			operations = append(operations, NewOperation(path, Post, operationItem))
 		}
 
-		if endpointItem := pathItem.Put; endpointItem != nil {
-			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Put})
+		if operationItem := pathItem.Put; operationItem != nil {
+			operations = append(operations, NewOperation(path, Put, operationItem))
 		}
 
-		if endpointItem := pathItem.Patch; endpointItem != nil {
-			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Patch})
+		if operationItem := pathItem.Patch; operationItem != nil {
+			operations = append(operations, NewOperation(path, Patch, operationItem))
 		}
 
-		if endpointItem := pathItem.Delete; endpointItem != nil {
-			endpoints = append(endpoints, endpoint{path: path, summary: endpointItem.Summary, method: Delete})
+		if operationItem := pathItem.Delete; operationItem != nil {
+			operations = append(operations, NewOperation(path, Delete, operationItem))
 		}
 	}
 
@@ -74,21 +88,21 @@ func createModel(doc *oas.T) model {
 		Patch:  4,
 		Delete: 5,
 	}
-	sort.Slice(endpoints, func(i, j int) bool {
-		// sort by endpoint path first then by method
-		if endpoints[i].(endpoint).path == endpoints[j].(endpoint).path {
-			return methodOrder[endpoints[i].(endpoint).method] < methodOrder[endpoints[j].(endpoint).method]
+	sort.Slice(operations, func(i, j int) bool {
+		// sort by operation path first then by method
+		if operations[i].(operation).path == operations[j].(operation).path {
+			return methodOrder[operations[i].(operation).method] < methodOrder[operations[j].(operation).method]
 		}
 
-		return endpoints[i].(endpoint).path < endpoints[j].(endpoint).path
+		return operations[i].(operation).path < operations[j].(operation).path
 	})
 
-	endpointsList := list.New(endpoints, list.NewDefaultDelegate(), 0, 0)
-	endpointsList.Title = "endpoints"
-	endpointsList.SetShowPagination(false)
+	operationsList := list.New(operations, list.NewDefaultDelegate(), 0, 0)
+	operationsList.Title = "endpoints"
+	operationsList.SetShowPagination(false)
 
 	return model{
-		endpoints: endpointsList,
+		operations: operationsList,
 	}
 }
 
@@ -102,10 +116,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
-		m.endpoints.SetSize(msg.Width-h, msg.Height-v)
+		m.operations.SetSize(msg.Width-h, msg.Height-v)
 
 	case tea.KeyMsg:
-		if m.endpoints.FilterState() == list.Filtering {
+		if m.operations.FilterState() == list.Filtering {
 			break
 		}
 
@@ -113,15 +127,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	newListModel, cmd := m.endpoints.Update(msg)
-	m.endpoints = newListModel
+	newListModel, cmd := m.operations.Update(msg)
+	m.operations = newListModel
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
-	return appStyle.Render(m.endpoints.View())
+	return appStyle.Render(m.operations.View())
 }
 
 func main() {

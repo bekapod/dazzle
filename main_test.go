@@ -97,20 +97,28 @@ func TestModel(t *testing.T) {
 	if !ok {
 		t.Fatalf("final model has the wrong type: %T", fm)
 	}
-	if len(m.endpoints.Items()) != 19 {
-		t.Errorf("m.endpoints.Items len != 19: %d", len(m.endpoints.Items()))
+	if len(m.operations.Items()) != 19 {
+		t.Errorf("m.operations.Items len != 19: %d", len(m.operations.Items()))
 	}
 
-	sample := m.endpoints.Items()[5].(endpoint)
+	sample := m.operations.Items()[5].(operation)
 	if sample.path != "/pet/{petId}" {
-		t.Errorf("m.endpoints.Items[5].path != /pet/{petId}: %s", sample.path)
+		t.Errorf("m.operations.Items[5].path != /pet/{petId}: %s", sample.path)
 	}
 
 	if sample.method != "POST" {
-		t.Errorf("m.endpoints.Items[5].method != POST: %s", sample.method)
+		t.Errorf("m.operations.Items[5].method != POST: %s", sample.method)
 	}
 
 	if sample.summary != "Updates a pet in the store with form data" {
-		t.Errorf("m.endpoints.Items[5].summary != Updates a pet in the store with form data: %s", sample.summary)
+		t.Errorf("m.operations.Items[5].summary != Updates a pet in the store with form data: %s", sample.summary)
+	}
+
+	if len(sample.tags) != 1 {
+		t.Errorf("m.operations.Items[5].tags len != 1: %d", len(sample.tags))
+	}
+
+	if sample.tags[0] != "pet" {
+		t.Errorf("m.operations.Items[5].tags[0] != pet: %s", sample.tags[0])
 	}
 }
