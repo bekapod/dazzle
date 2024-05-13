@@ -13,12 +13,7 @@ import (
 	oas "github.com/getkin/kin-openapi/openapi3"
 )
 
-var (
-	appStyle = lipgloss.NewStyle().Padding(0, 0)
-
-	listItemStyle         = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("241"))
-	listItemSelectedStyle = lipgloss.NewStyle().PaddingLeft(0).Foreground(lipgloss.Color("170"))
-)
+var appStyle = lipgloss.NewStyle().Padding(0, 0)
 
 type Method string
 
