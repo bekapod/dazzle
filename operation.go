@@ -179,15 +179,29 @@ func (d OperationDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
 	var (
 		itemStyle             lipgloss.Style
+		methodColour          lipgloss.AdaptiveColor
 		path, summary, method string
 		matchedRunes          []int
 		s                     = &d.Styles
 	)
+	palette := NewPalette()
 
 	if i, ok := item.(Operation); ok {
 		path = i.Path()
 		summary = i.Summary()
 		method = i.Method()
+		switch i.Method() {
+		case "GET":
+			methodColour = palette.Methods.Get
+		case "POST":
+			methodColour = palette.Methods.Post
+		case "PUT":
+			methodColour = palette.Methods.Put
+		case "PATCH":
+			methodColour = palette.Methods.Patch
+		case "DELETE":
+			methodColour = palette.Methods.Delete
+		}
 	} else {
 		return
 	}
@@ -215,7 +229,7 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 		itemStyle = s.DimmedItem
 		path = s.DimmedPath.Render(path)
 		summary = s.DimmedSummary.Render(summary)
-		method = s.DimmedMethod.Render(method)
+		method = s.DimmedMethod.Foreground(methodColour).Render(method)
 	} else if isSelected && m.FilterState() != list.Filtering {
 		if isFiltered {
 			unmatched := s.SelectedPath.Inline(true)
@@ -235,7 +249,7 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 		itemStyle = s.NormalItem
 		path = s.NormalPath.Render(path)
 		summary = s.NormalSummary.Render(summary)
-		method = s.NormalMethod.Render(method)
+		method = s.NormalMethod.Foreground(methodColour).Render(method)
 	}
 
 	content := fmt.Sprintf("%s%s\n%s", method, path, summary)

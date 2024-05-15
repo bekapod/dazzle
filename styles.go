@@ -19,6 +19,15 @@ type Palette struct {
 	Base      lipgloss.AdaptiveColor
 	Rosewater lipgloss.AdaptiveColor
 	Lavendar  lipgloss.AdaptiveColor
+	Methods   MethodPalette
+}
+
+type MethodPalette struct {
+	Get    lipgloss.AdaptiveColor
+	Post   lipgloss.AdaptiveColor
+	Put    lipgloss.AdaptiveColor
+	Patch  lipgloss.AdaptiveColor
+	Delete lipgloss.AdaptiveColor
 }
 
 func NewPalette() (p Palette) {
@@ -31,6 +40,13 @@ func NewPalette() (p Palette) {
 		Base:      lipgloss.AdaptiveColor{Light: "#eff1f5", Dark: "#1a1b26"},
 		Rosewater: lipgloss.AdaptiveColor{Light: "#dc8a78", Dark: "#f4dbd6"},
 		Lavendar:  lipgloss.AdaptiveColor{Light: "#7287fd", Dark: "#b7bdf8"},
+		Methods: MethodPalette{
+			Get:    lipgloss.AdaptiveColor{Light: "#40a02b", Dark: "#a6da95"},
+			Post:   lipgloss.AdaptiveColor{Light: "#8839ef", Dark: "#c6a0f6"},
+			Put:    lipgloss.AdaptiveColor{Light: "#fe640b", Dark: "#f5a97f"},
+			Patch:  lipgloss.AdaptiveColor{Light: "#df8e1d", Dark: "#eed49f"},
+			Delete: lipgloss.AdaptiveColor{Light: "#e64553", Dark: "#ed8796"},
+		},
 	}
 }
 
