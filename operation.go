@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"time"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/paginator"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	oas "github.com/getkin/kin-openapi/openapi3"
@@ -52,7 +56,7 @@ func NewOperation(path string, method string, operationItem *oas.Operation) oper
 	}
 }
 
-func NewOperationsList(doc *oas.T) list.Model {
+func NewOperationList(doc *oas.T) list.Model {
 	operations := make([]list.Item, 0)
 	for path, pathItem := range doc.Paths.Map() {
 		if operationItem := pathItem.Get; operationItem != nil {
@@ -92,11 +96,51 @@ func NewOperationsList(doc *oas.T) list.Model {
 		return operations[i].(operation).path < operations[j].(operation).path
 	})
 
-	operationsList := list.New(operations, NewOperationDelegate(), 0, 0)
-	operationsList.Title = "endpoints"
-	operationsList.SetShowPagination(false)
+	return newOperationListModel(operations)
+}
 
-	return operationsList
+func newOperationListModel(operations []list.Item) list.Model {
+	styles := NewOperationListStyles()
+
+	filterInput := textinput.New()
+	filterInput.Prompt = "Filter: "
+	filterInput.PromptStyle = styles.FilterPrompt
+	filterInput.Cursor.Style = styles.FilterCursor
+	filterInput.CharLimit = 64
+	filterInput.Focus()
+
+	p := paginator.New()
+	p.Type = paginator.Dots
+	p.ActiveDot = styles.ActivePaginationDot.String()
+	p.InactiveDot = styles.InactivePaginationDot.String()
+
+	h := help.New()
+	h.Styles = NewHelpStyles()
+
+	m := list.Model{
+		KeyMap:                list.DefaultKeyMap(),
+		Filter:                list.DefaultFilter,
+		Styles:                styles,
+		Title:                 "Endpoints",
+		FilterInput:           filterInput,
+		StatusMessageLifetime: time.Second,
+		Paginator:             p,
+		Help:                  h,
+	}
+
+	m.SetDelegate(NewOperationDelegate())
+	m.SetItems(operations)
+	m.SetWidth(0)
+	m.SetHeight(0)
+	m.SetShowTitle(true)
+	m.SetShowFilter(true)
+	m.SetShowStatusBar(true)
+	m.SetShowPagination(true)
+	m.SetShowHelp(true)
+	m.SetStatusBarItemName("item", "items")
+	m.SetFilteringEnabled(true)
+
+	return m
 }
 
 type Operation interface {

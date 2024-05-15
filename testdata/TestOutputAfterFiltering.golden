@@ -1,6 +1,6 @@
-[?25l[?2004h   endpoints                                                       
+[?25l[?2004h  Endpoints                                                        
                                                                    
-  “user” 7 items • 12 filtered                                     
+  “user” 7 items 12 filtered                                       
                                                                    
 ┃ POST /user                                                       
 ┃ Create user                                                      

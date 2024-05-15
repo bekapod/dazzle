@@ -1,7 +1,13 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
+)
+
+const (
+	bullet = "•"
 )
 
 type Palette struct {
@@ -9,7 +15,10 @@ type Palette struct {
 	SubText1  lipgloss.AdaptiveColor
 	SubText0  lipgloss.AdaptiveColor
 	Overlay1  lipgloss.AdaptiveColor
+	Surface1  lipgloss.AdaptiveColor
+	Base      lipgloss.AdaptiveColor
 	Rosewater lipgloss.AdaptiveColor
+	Lavendar  lipgloss.AdaptiveColor
 }
 
 func NewPalette() (p Palette) {
@@ -18,8 +27,67 @@ func NewPalette() (p Palette) {
 		SubText1:  lipgloss.AdaptiveColor{Light: "#5c5f77", Dark: "#b8c0e0"},
 		SubText0:  lipgloss.AdaptiveColor{Light: "#6c6f85", Dark: "#a5adcb"},
 		Overlay1:  lipgloss.AdaptiveColor{Light: "#8c8fa1", Dark: "#8087a2"},
+		Surface1:  lipgloss.AdaptiveColor{Light: "#bcc0cc", Dark: "#494d64"},
+		Base:      lipgloss.AdaptiveColor{Light: "#eff1f5", Dark: "#1a1b26"},
 		Rosewater: lipgloss.AdaptiveColor{Light: "#dc8a78", Dark: "#f4dbd6"},
+		Lavendar:  lipgloss.AdaptiveColor{Light: "#7287fd", Dark: "#b7bdf8"},
 	}
+}
+
+func NewOperationListStyles() (s list.Styles) {
+	palette := NewPalette()
+	normalText := lipgloss.NewStyle().Foreground(palette.Text)
+
+	s.Title = lipgloss.NewStyle().
+		Foreground(palette.Base).
+		Background(palette.Text).
+		Bold(true).
+		Padding(0, 1, 0, 1)
+	s.TitleBar = lipgloss.NewStyle().Padding(0, 0, 0, 1)
+
+	s.StatusBar = normalText.Copy().
+		Foreground(palette.Overlay1).
+		Italic(true).
+		Padding(0, 0, 0, 2).
+		Margin(1, 0)
+	s.StatusBarFilterCount = lipgloss.NewStyle().
+		Padding(0, 1, 0, 1)
+
+	s.PaginationStyle = lipgloss.NewStyle().
+		PaddingLeft(2)
+	s.ActivePaginationDot = lipgloss.NewStyle().
+		Foreground(palette.Rosewater).
+		SetString(bullet)
+	s.InactivePaginationDot = lipgloss.NewStyle().
+		Foreground(palette.Surface1).
+		SetString(bullet)
+
+	s.HelpStyle = lipgloss.NewStyle().
+		Padding(1, 0, 0, 2)
+
+	s.FilterPrompt = normalText.Copy().
+		Foreground(palette.SubText0).
+		Padding(0, 0, 0, 1).
+		Bold(true)
+
+	s.FilterCursor = lipgloss.NewStyle().
+		Foreground(palette.Rosewater)
+
+	return s
+}
+
+func NewHelpStyles() (h help.Styles) {
+	palette := NewPalette()
+	normalText := lipgloss.NewStyle().Foreground(palette.Text)
+
+	h.ShortKey = normalText.Copy().Foreground(palette.SubText1).Bold(true)
+	h.ShortDesc = normalText.Copy().Foreground(palette.Overlay1)
+	h.ShortSeparator = normalText.Copy().Foreground(palette.Surface1)
+	h.FullKey = normalText.Copy().Foreground(palette.SubText1).Bold(true)
+	h.FullDesc = normalText.Copy().Foreground(palette.Overlay1)
+	h.FullSeparator = normalText.Copy().Foreground(palette.Surface1)
+
+	return h
 }
 
 type OperationItemStyles struct {

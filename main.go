@@ -22,7 +22,7 @@ func createModel(doc *oas.T) model {
 	// TODO: be good if we could validate the document, but my test doc isn't valid
 
 	return model{
-		operations: NewOperationsList(doc),
+		operations: NewOperationList(doc),
 	}
 }
 
