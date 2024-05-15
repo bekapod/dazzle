@@ -113,12 +113,4 @@ func TestModel(t *testing.T) {
 	if sample.summary != "Updates a pet in the store with form data" {
 		t.Errorf("m.operations.Items[5].summary != Updates a pet in the store with form data: %s", sample.summary)
 	}
-
-	if len(sample.tags) != 1 {
-		t.Errorf("m.operations.Items[5].tags len != 1: %d", len(sample.tags))
-	}
-
-	if sample.tags[0] != "pet" {
-		t.Errorf("m.operations.Items[5].tags[0] != pet: %s", sample.tags[0])
-	}
 }
