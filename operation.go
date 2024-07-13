@@ -233,7 +233,7 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	} else if isSelected && m.FilterState() != list.Filtering {
 		if isFiltered {
 			unmatched := s.SelectedPath.Inline(true)
-			matched := unmatched.Copy().Inherit(s.FilterMatch)
+			matched := unmatched.Inherit(s.FilterMatch)
 			path = lipgloss.StyleRunes(path, matchedRunes, matched, unmatched)
 		}
 		itemStyle = s.SelectedItem
@@ -243,7 +243,7 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	} else {
 		if isFiltered {
 			unmatched := s.NormalPath.Inline(true)
-			matched := unmatched.Copy().Inherit(s.FilterMatch)
+			matched := unmatched.Inherit(s.FilterMatch)
 			path = lipgloss.StyleRunes(path, matchedRunes, matched, unmatched)
 		}
 		itemStyle = s.NormalItem

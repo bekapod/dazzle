@@ -61,7 +61,7 @@ func NewOperationListStyles() (s list.Styles) {
 		Padding(0, 1, 0, 1)
 	s.TitleBar = lipgloss.NewStyle().Padding(0, 0, 0, 1)
 
-	s.StatusBar = normalText.Copy().
+	s.StatusBar = normalText.
 		Foreground(palette.Overlay1).
 		Italic(true).
 		Padding(0, 0, 0, 2).
@@ -81,7 +81,7 @@ func NewOperationListStyles() (s list.Styles) {
 	s.HelpStyle = lipgloss.NewStyle().
 		Padding(1, 0, 0, 2)
 
-	s.FilterPrompt = normalText.Copy().
+	s.FilterPrompt = normalText.
 		Foreground(palette.SubText0).
 		Padding(0, 0, 0, 1).
 		Bold(true)
@@ -96,12 +96,12 @@ func NewHelpStyles() (h help.Styles) {
 	palette := NewPalette()
 	normalText := lipgloss.NewStyle().Foreground(palette.Text)
 
-	h.ShortKey = normalText.Copy().Foreground(palette.SubText1).Bold(true)
-	h.ShortDesc = normalText.Copy().Foreground(palette.Overlay1)
-	h.ShortSeparator = normalText.Copy().Foreground(palette.Surface1)
-	h.FullKey = normalText.Copy().Foreground(palette.SubText1).Bold(true)
-	h.FullDesc = normalText.Copy().Foreground(palette.Overlay1)
-	h.FullSeparator = normalText.Copy().Foreground(palette.Surface1)
+	h.ShortKey = normalText.Foreground(palette.SubText1).Bold(true)
+	h.ShortDesc = normalText.Foreground(palette.Overlay1)
+	h.ShortSeparator = normalText.Foreground(palette.Surface1)
+	h.FullKey = normalText.Foreground(palette.SubText1).Bold(true)
+	h.FullDesc = normalText.Foreground(palette.Overlay1)
+	h.FullSeparator = normalText.Foreground(palette.Surface1)
 
 	return h
 }
@@ -133,7 +133,7 @@ func NewOperationItemStyles() (s OperationItemStyles) {
 		Padding(0, 1, 0, 1).
 		Border(lipgloss.HiddenBorder(), false, false, false, true)
 
-	s.NormalMethod = normalText.Copy().
+	s.NormalMethod = normalText.
 		Bold(true).
 		Padding(0, 1, 0, 0)
 
@@ -142,26 +142,26 @@ func NewOperationItemStyles() (s OperationItemStyles) {
 	s.NormalSummary = lipgloss.NewStyle().
 		Foreground(palette.Overlay1)
 
-	s.SelectedItem = s.NormalItem.Copy().
+	s.SelectedItem = s.NormalItem.
 		Border(lipgloss.ThickBorder(), false, false, false, true).
 		BorderForeground(palette.Rosewater)
 
-	s.SelectedMethod = s.NormalMethod.Copy().
+	s.SelectedMethod = s.NormalMethod.
 		Foreground(palette.Rosewater)
 
-	s.SelectedPath = s.NormalPath.Copy().
+	s.SelectedPath = s.NormalPath.
 		Foreground(palette.Rosewater)
 
-	s.SelectedSummary = s.NormalSummary.Copy().
+	s.SelectedSummary = s.NormalSummary.
 		Foreground(palette.Rosewater)
 
-	s.DimmedItem = s.NormalItem.Copy().Faint(true)
+	s.DimmedItem = s.NormalItem.Faint(true)
 
-	s.DimmedMethod = s.NormalMethod.Copy().Faint(true)
+	s.DimmedMethod = s.NormalMethod.Faint(true)
 
-	s.DimmedPath = s.NormalPath.Copy().Faint(true)
+	s.DimmedPath = s.NormalPath.Faint(true)
 
-	s.DimmedSummary = s.NormalSummary.Copy().Faint(true)
+	s.DimmedSummary = s.NormalSummary.Faint(true)
 
 	s.FilterMatch = lipgloss.NewStyle().Underline(true)
 
