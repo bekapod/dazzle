@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -210,9 +211,12 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 		return
 	}
 
-	pathWidth := uint(m.Width() - s.NormalPath.GetPaddingLeft() - s.NormalPath.GetPaddingRight())
-	path = truncate.StringWithTail(path, pathWidth, ellipsis)
-	summaryWidth := uint(m.Width() - s.NormalSummary.GetPaddingLeft() - s.NormalSummary.GetPaddingRight())
+	itemHSize, _ := s.NormalItem.GetFrameSize()
+	methodHSize, _ := s.NormalMethod.GetFrameSize()
+	pathWidth := uint(m.Width() - itemHSize - methodHSize)
+	path = truncate.StringWithTail(method+path, pathWidth, ellipsis)
+	path = strings.Replace(path, method, "", 1)
+	summaryWidth := uint(m.Width() - itemHSize)
 	summary = truncate.StringWithTail(summary, summaryWidth, ellipsis)
 
 	var (
