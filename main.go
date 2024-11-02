@@ -58,6 +58,10 @@ func (m model) View() string {
 	return appStyle.Render(m.operations.View())
 }
 
+func usage() {
+	fmt.Println("Usage: dazzle <URL>")
+}
+
 func main() {
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -65,6 +69,13 @@ func main() {
 		os.Exit(1)
 	}
 	defer f.Close()
+
+	if len(os.Args) != 2 {
+		usage()
+
+		fmt.Fprintln(os.Stderr, "\nPlease provide a valid OpenAPI document")
+		os.Exit(1)
+	}
 
 	raw_url := os.Args[1]
 	parsed_url, err := url.ParseRequestURI(raw_url)
