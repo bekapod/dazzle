@@ -5,8 +5,8 @@ go 1.23.0
 toolchain go1.24.4
 
 require (
-	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/bubbles v0.21.0
+	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20240510181320-e66de7a51531
 	github.com/getkin/kin-openapi v0.132.0
