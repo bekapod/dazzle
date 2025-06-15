@@ -68,7 +68,16 @@ func main() {
 		fmt.Println("fatal:", err)
 		os.Exit(1)
 	}
-	defer f.Close()
+
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
 
 	if len(os.Args) != 2 {
 		usage()
