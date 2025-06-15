@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -257,5 +258,10 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	}
 
 	content := fmt.Sprintf("%s%s\n%s", method, path, summary)
-	fmt.Fprintf(w, "%s", itemStyle.Render(content))
+	_, err := fmt.Fprintf(w, "%s", itemStyle.Render(content))
+	if err != nil {
+		// TODO: probably do something less drastic
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
 }
