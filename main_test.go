@@ -5,10 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"dazzle/internal/application"
+	"dazzle/internal/infrastructure"
+	"dazzle/internal/ui"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/exp/teatest"
-	oas "github.com/getkin/kin-openapi/openapi3"
 	"github.com/muesli/termenv"
 )
 
@@ -16,18 +19,25 @@ func init() {
 	lipgloss.SetColorProfile(termenv.Ascii)
 }
 
-func loadDoc() *oas.T {
-	loader := oas.NewLoader()
-	doc, err := loader.LoadFromFile("fixtures/openapi-spec.yaml")
+func createTestModel(t *testing.T) *ui.AppModel {
+	// Use file-based loading for tests
+	repo, err := infrastructure.NewOpenAPIRepositoryFromFile("fixtures/openapi-spec.yaml")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	return doc
+
+	service := application.NewOperationService(repo)
+	
+	model, err := ui.NewAppModel(service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return model
 }
 
 func TestInitialOutput(t *testing.T) {
-	doc := loadDoc()
-	m := createModel(doc)
+	m := createTestModel(t)
 	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(300, 100))
 	tm.Send(tea.KeyMsg{
 		Type:  tea.KeyRunes,
@@ -41,8 +51,7 @@ func TestInitialOutput(t *testing.T) {
 }
 
 func TestOutputAfterScrolling(t *testing.T) {
-	doc := loadDoc()
-	m := createModel(doc)
+	m := createTestModel(t)
 	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(300, 100))
 	tm.Send(tea.KeyMsg{
 		Type:  tea.KeyRunes,
@@ -61,8 +70,7 @@ func TestOutputAfterScrolling(t *testing.T) {
 }
 
 func TestOutputAfterFiltering(t *testing.T) {
-	doc := loadDoc()
-	m := createModel(doc)
+	m := createTestModel(t)
 	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(300, 100))
 	for _, r := range "/user" {
 		tm.Send(tea.KeyMsg{
@@ -85,32 +93,36 @@ func TestOutputAfterFiltering(t *testing.T) {
 	teatest.RequireEqualOutput(t, out)
 }
 
-func TestModel(t *testing.T) {
-	doc := loadDoc()
-	tm := teatest.NewTestModel(t, createModel(doc), teatest.WithInitialTermSize(300, 100))
-	tm.Send(tea.KeyMsg{
-		Type:  tea.KeyRunes,
-		Runes: []rune("q"),
-	})
-	fm := tm.FinalModel(t, teatest.WithFinalTimeout(time.Second*2))
-	m, ok := fm.(model)
-	if !ok {
-		t.Fatalf("final model has the wrong type: %T", fm)
-	}
-	if len(m.operations.Items()) != 19 {
-		t.Errorf("m.operations.Items len != 19: %d", len(m.operations.Items()))
+func TestDomainLogic(t *testing.T) {
+	repo, err := infrastructure.NewOpenAPIRepositoryFromFile("fixtures/openapi-spec.yaml")
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sample := m.operations.Items()[5].(operation)
-	if sample.path != "/pet/{petId}" {
-		t.Errorf("m.operations.Items[5].path != /pet/{petId}: %s", sample.path)
+	service := application.NewOperationService(repo)
+	
+	operations, err := service.ListOperations()
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if sample.method != "POST" {
-		t.Errorf("m.operations.Items[5].method != POST: %s", sample.method)
+	if len(operations) != 19 {
+		t.Errorf("expected 19 operations, got %d", len(operations))
 	}
 
-	if sample.summary != "Updates a pet in the store with form data" {
-		t.Errorf("m.operations.Items[5].summary != Updates a pet in the store with form data: %s", sample.summary)
+	// Test that operations are sorted correctly
+	if len(operations) > 5 {
+		sample := operations[5]
+		if sample.Path != "/pet/{petId}" {
+			t.Errorf("expected path '/pet/{petId}', got '%s'", sample.Path)
+		}
+
+		if string(sample.Method) != "POST" {
+			t.Errorf("expected method 'POST', got '%s'", sample.Method)
+		}
+
+		if sample.Summary != "Updates a pet in the store with form data" {
+			t.Errorf("expected summary 'Updates a pet in the store with form data', got '%s'", sample.Summary)
+		}
 	}
 }
