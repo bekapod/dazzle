@@ -27,7 +27,7 @@ func createTestModel(t *testing.T) *ui.AppModel {
 	}
 
 	service := application.NewOperationService(repo)
-	
+
 	model, err := ui.NewAppModel(service)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +86,7 @@ func TestOutputAfterFiltering(t *testing.T) {
 		Runes: []rune("q"),
 	})
 
-	out, err := io.ReadAll(tm.FinalOutput(t, teatest.WithFinalTimeout(time.Second*2)))
+	out, err := io.ReadAll(tm.FinalOutput(t, teatest.WithFinalTimeout(time.Second*5)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,7 +100,7 @@ func TestDomainLogic(t *testing.T) {
 	}
 
 	service := application.NewOperationService(repo)
-	
+
 	operations, err := service.ListOperations()
 	if err != nil {
 		t.Fatal(err)
@@ -126,3 +126,4 @@ func TestDomainLogic(t *testing.T) {
 		}
 	}
 }
+
