@@ -29,5 +29,10 @@ jobs:
         with:
           go-version: stable
       - name: test
+        env:
+          TERM: xterm-256color
+          COLORTERM: ""
+          FORCE_COLOR: ""
+          NO_COLOR: ""
         run: |
           go test -v -failfast -coverpkg=./... -covermode=atomic -coverprofile=coverage.txt ./...
