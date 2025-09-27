@@ -20,14 +20,13 @@ func init() {
 }
 
 func createTestModel(t *testing.T) *ui.AppModel {
-	// Use file-based loading for tests
 	repo, err := infrastructure.NewOpenAPIRepositoryFromFile("fixtures/openapi-spec.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	service := application.NewOperationService(repo)
-	
+
 	model, err := ui.NewAppModel(service)
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +71,13 @@ func TestOutputAfterScrolling(t *testing.T) {
 func TestOutputAfterFiltering(t *testing.T) {
 	m := createTestModel(t)
 	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(300, 100))
-	for _, r := range "/user" {
+
+	tm.Send(tea.KeyMsg{
+		Type:  tea.KeyRunes,
+		Runes: []rune("/"),
+	})
+
+	for _, r := range "user" {
 		tm.Send(tea.KeyMsg{
 			Type:  tea.KeyRunes,
 			Runes: []rune{r},
@@ -100,7 +105,7 @@ func TestDomainLogic(t *testing.T) {
 	}
 
 	service := application.NewOperationService(repo)
-	
+
 	operations, err := service.ListOperations()
 	if err != nil {
 		t.Fatal(err)
@@ -110,7 +115,6 @@ func TestDomainLogic(t *testing.T) {
 		t.Errorf("expected 19 operations, got %d", len(operations))
 	}
 
-	// Test that operations are sorted correctly
 	if len(operations) > 5 {
 		sample := operations[5]
 		if sample.Path != "/pet/{petId}" {
@@ -126,3 +130,4 @@ func TestDomainLogic(t *testing.T) {
 		}
 	}
 }
+
