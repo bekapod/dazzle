@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"time"
 
@@ -235,9 +234,5 @@ func (d OperationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	}
 
 	content := fmt.Sprintf("%s%s\n%s", method, path, summary)
-	_, err := fmt.Fprintf(w, "%s", itemStyle.Render(content))
-	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
-	}
+	_, _ = fmt.Fprint(w, itemStyle.Render(content))
 }
