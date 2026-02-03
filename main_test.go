@@ -86,6 +86,10 @@ func TestOutputAfterFiltering(t *testing.T) {
 	tm.Send(tea.KeyMsg{
 		Type: tea.KeyEnter,
 	})
+
+	// Wait for filter to be applied before quitting
+	time.Sleep(100 * time.Millisecond)
+
 	tm.Send(tea.KeyMsg{
 		Type:  tea.KeyRunes,
 		Runes: []rune("q"),
