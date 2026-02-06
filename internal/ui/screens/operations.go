@@ -23,7 +23,9 @@ func (i operationItem) Title() string {
 }
 
 func (i operationItem) Description() string { return i.op.Summary }
-func (i operationItem) FilterValue() string  { return string(i.op.Method) + " " + i.op.Path + " " + i.op.Summary }
+func (i operationItem) FilterValue() string {
+	return string(i.op.Method) + " " + i.op.Path + " " + i.op.Summary
+}
 
 // operationDelegate renders operations with colored HTTP methods.
 type operationDelegate struct{}
@@ -44,7 +46,7 @@ func (d operationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 
 	isSelected := index == m.Index()
 
-	title := fmt.Sprintf("%s %s", method, path)
+	var title string
 	if isSelected {
 		title = lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("> %s %s", method, path))
 		summary = lipgloss.NewStyle().Foreground(styles.Subtext1).Render("  " + summary)
@@ -94,8 +96,7 @@ func (s *OperationsScreen) Name() string { return "operations" }
 func (s *OperationsScreen) Init() tea.Cmd { return nil }
 
 func (s *OperationsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
+	if msg, ok := msg.(tea.WindowSizeMsg); ok {
 		s.width = msg.Width
 		s.height = msg.Height
 		s.list.SetSize(msg.Width, msg.Height)
