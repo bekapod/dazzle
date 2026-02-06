@@ -55,13 +55,13 @@ func extractOperations(path string, item *oas.PathItem) []domain.Operation {
 	var ops []domain.Operation
 	for _, c := range candidates {
 		if c.op != nil {
-			ops = append(ops, adaptOperation(path, c.method, c.op))
+			ops = append(ops, adaptOperation(path, c.method, item.Parameters, c.op))
 		}
 	}
 	return ops
 }
 
-func adaptOperation(path string, method domain.HTTPMethod, op *oas.Operation) domain.Operation {
+func adaptOperation(path string, method domain.HTTPMethod, pathParams oas.Parameters, op *oas.Operation) domain.Operation {
 	id := op.OperationID
 	if id == "" {
 		id = string(method) + " " + path
@@ -74,8 +74,39 @@ func adaptOperation(path string, method domain.HTTPMethod, op *oas.Operation) do
 		Summary:     op.Summary,
 		Description: op.Description,
 		Tags:        op.Tags,
-		Parameters:  adaptParameters(op.Parameters),
+		Parameters:  adaptParameters(mergeParameters(pathParams, op.Parameters)),
 	}
+}
+
+// mergeParameters combines path-level and operation-level parameters.
+// Operation-level parameters override path-level parameters with the same name and location.
+func mergeParameters(pathParams, opParams oas.Parameters) oas.Parameters {
+	if len(pathParams) == 0 {
+		return opParams
+	}
+	if len(opParams) == 0 {
+		return pathParams
+	}
+
+	// Index operation params by name+in for override lookup.
+	opSet := make(map[string]struct{}, len(opParams))
+	for _, p := range opParams {
+		if p.Value != nil {
+			opSet[p.Value.In+":"+p.Value.Name] = struct{}{}
+		}
+	}
+
+	merged := make(oas.Parameters, 0, len(pathParams)+len(opParams))
+	for _, p := range pathParams {
+		if p.Value == nil {
+			continue
+		}
+		if _, overridden := opSet[p.Value.In+":"+p.Value.Name]; !overridden {
+			merged = append(merged, p)
+		}
+	}
+	merged = append(merged, opParams...)
+	return merged
 }
 
 func adaptParameters(params oas.Parameters) []domain.Parameter {
