@@ -104,6 +104,149 @@ func TestRepository_Load(t *testing.T) {
 			t.Errorf("expected param name 'petId', got %q", deletePet.Parameters[0].Name)
 		}
 	})
+
+	t.Run("parameter schemas", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		limit := ops["listPets"].Parameters[0]
+		if limit.Schema == nil {
+			t.Fatal("expected limit param to have schema")
+		}
+		if limit.Schema.Type != domain.SchemaTypeInteger {
+			t.Errorf("expected integer type, got %q", limit.Schema.Type)
+		}
+		if limit.Schema.Format != "int32" {
+			t.Errorf("expected int32 format, got %q", limit.Schema.Format)
+		}
+
+		petId := ops["getPet"].Parameters[0]
+		if petId.Schema == nil {
+			t.Fatal("expected petId param to have schema")
+		}
+		if petId.Schema.Type != domain.SchemaTypeInteger {
+			t.Errorf("expected integer type, got %q", petId.Schema.Type)
+		}
+	})
+
+	t.Run("request body", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		createPet := ops["createPet"]
+		if createPet.RequestBody == nil {
+			t.Fatal("expected createPet to have a request body")
+		}
+		if !createPet.RequestBody.Required {
+			t.Error("expected request body to be required")
+		}
+		jsonContent, ok := createPet.RequestBody.Content["application/json"]
+		if !ok {
+			t.Fatal("expected application/json content type")
+		}
+		if jsonContent.Schema == nil {
+			t.Fatal("expected schema in json content")
+		}
+		if jsonContent.Schema.Type != domain.SchemaTypeObject {
+			t.Errorf("expected object type, got %q", jsonContent.Schema.Type)
+		}
+		nameProp, ok := jsonContent.Schema.Properties["name"]
+		if !ok {
+			t.Fatal("expected 'name' property in schema")
+		}
+		if nameProp.Type != domain.SchemaTypeString {
+			t.Errorf("expected string type for name, got %q", nameProp.Type)
+		}
+	})
+
+	t.Run("responses", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		listPets := ops["listPets"]
+		resp200, ok := listPets.Responses["200"]
+		if !ok {
+			t.Fatal("expected 200 response for listPets")
+		}
+		if resp200.Description != "A list of pets" {
+			t.Errorf("unexpected description: %q", resp200.Description)
+		}
+		jsonContent, ok := resp200.Content["application/json"]
+		if !ok {
+			t.Fatal("expected application/json content in 200 response")
+		}
+		if jsonContent.Schema == nil {
+			t.Fatal("expected schema in response content")
+		}
+		if jsonContent.Schema.Type != domain.SchemaTypeArray {
+			t.Errorf("expected array type, got %q", jsonContent.Schema.Type)
+		}
+		if jsonContent.Schema.Items == nil {
+			t.Fatal("expected items schema for array")
+		}
+		if jsonContent.Schema.Items.Type != domain.SchemaTypeObject {
+			t.Errorf("expected object item type, got %q", jsonContent.Schema.Items.Type)
+		}
+
+		deletePet := ops["deletePet"]
+		resp204, ok := deletePet.Responses["204"]
+		if !ok {
+			t.Fatal("expected 204 response for deletePet")
+		}
+		if resp204.Description != "Pet deleted" {
+			t.Errorf("unexpected description: %q", resp204.Description)
+		}
+		if resp204.Content != nil {
+			t.Error("expected no content for 204 response")
+		}
+	})
+
+	t.Run("response headers", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		resp200 := ops["listPets"].Responses["200"]
+		if len(resp200.Headers) != 1 {
+			t.Fatalf("expected 1 response header, got %d", len(resp200.Headers))
+		}
+		h, ok := resp200.Headers["X-Total-Count"]
+		if !ok {
+			t.Fatal("expected X-Total-Count header")
+		}
+		if h.Description != "Total number of pets" {
+			t.Errorf("unexpected header description: %q", h.Description)
+		}
+		if h.Schema == nil {
+			t.Fatal("expected header to have schema")
+		}
+		if h.Schema.Type != domain.SchemaTypeInteger {
+			t.Errorf("expected integer type, got %q", h.Schema.Type)
+		}
+	})
+
+	t.Run("array item properties preserved", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		resp200 := ops["listPets"].Responses["200"]
+		jsonContent := resp200.Content["application/json"]
+		items := jsonContent.Schema.Items
+		if len(items.Properties) != 2 {
+			t.Fatalf("expected 2 item properties (id, name), got %d", len(items.Properties))
+		}
+		if items.Properties["id"].Type != domain.SchemaTypeInteger {
+			t.Errorf("expected integer type for id, got %q", items.Properties["id"].Type)
+		}
+		if items.Properties["name"].Type != domain.SchemaTypeString {
+			t.Errorf("expected string type for name, got %q", items.Properties["name"].Type)
+		}
+	})
+
+	t.Run("nil request body for GET operations", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		if ops["listPets"].RequestBody != nil {
+			t.Error("expected nil request body for listPets")
+		}
+		if ops["getPet"].RequestBody != nil {
+			t.Error("expected nil request body for getPet")
+		}
+	})
 }
 
 func TestRepository_Load_InvalidFile(t *testing.T) {

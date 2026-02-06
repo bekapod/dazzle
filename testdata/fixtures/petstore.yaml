@@ -24,6 +24,11 @@ paths:
       responses:
         "200":
           description: A list of pets
+          headers:
+            X-Total-Count:
+              description: Total number of pets
+              schema:
+                type: integer
           content:
             application/json:
               schema:

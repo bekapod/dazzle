@@ -10,7 +10,7 @@ type Operation struct {
 	Tags        []string
 	Parameters  []Parameter
 	RequestBody *RequestBody
-	Responses   map[int]Response
+	Responses   map[string]Response
 }
 
 // HTTPMethod represents an HTTP request method.
