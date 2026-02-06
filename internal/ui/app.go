@@ -51,8 +51,10 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
+		if msg.String() == "q" && m.screen.Name() == "welcome" {
 			return m, tea.Quit
 		}
 
@@ -79,13 +81,11 @@ func (m *AppModel) handleSpecLoaded(msg SpecLoadedMsg) (tea.Model, tea.Cmd) {
 
 	m.spec = msg.Spec
 
-	// For now, just mark loaded on the welcome screen.
-	// The operations screen commit will switch screens here.
-	if ws, ok := m.screen.(*screens.WelcomeScreen); ok {
-		ws.SetLoaded()
-	}
+	opsScreen := screens.NewOperationsScreen(m.spec, m.opSvc)
+	m.screen = opsScreen
 
-	return m, nil
+	// Send the current window size to the new screen
+	return m.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 }
 
 func (m *AppModel) loadSpec() tea.Cmd {
