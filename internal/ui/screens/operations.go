@@ -55,10 +55,10 @@ func (d operationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 		summary = lipgloss.NewStyle().Foreground(styles.Overlay1).Render("  " + summary)
 	}
 
-	if summary != "" && strings.TrimSpace(op.op.Summary) != "" {
+	if strings.TrimSpace(op.op.Summary) != "" {
 		fmt.Fprintf(w, "%s\n%s", title, summary)
 	} else {
-		fmt.Fprint(w, title)
+		fmt.Fprintf(w, "%s\n", title)
 	}
 }
 
