@@ -56,6 +56,26 @@ func TestOperationsScreen_Render(t *testing.T) {
 	}
 }
 
+func TestOperationsScreen_EmptySummary(t *testing.T) {
+	spec := &domain.Spec{
+		Info: domain.SpecInfo{Title: "Test"},
+		Operations: []domain.Operation{
+			{ID: "noSummary", Path: "/empty", Method: domain.GET, Summary: ""},
+			{ID: "withSummary", Path: "/full", Method: domain.POST, Summary: "Has a summary"},
+		},
+	}
+	s := screens.NewOperationsScreen(spec, &stubOpService{})
+	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	view := s.View()
+	if !strings.Contains(view, "/empty") {
+		t.Error("expected /empty in view")
+	}
+	if !strings.Contains(view, "/full") {
+		t.Error("expected /full in view")
+	}
+}
+
 func TestOperationsScreen_ShowsTitle(t *testing.T) {
 	s := screens.NewOperationsScreen(testSpec(), &stubOpService{})
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
