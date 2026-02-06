@@ -64,7 +64,7 @@ func TestRepository_Load(t *testing.T) {
 		}
 	})
 
-	t.Run("parameters", func(t *testing.T) {
+	t.Run("operation-level parameters", func(t *testing.T) {
 		ops := indexByID(spec.Operations)
 
 		listPets := ops["listPets"]
@@ -77,6 +77,31 @@ func TestRepository_Load(t *testing.T) {
 		}
 		if param.In != domain.ParameterInQuery {
 			t.Errorf("expected param in 'query', got %q", param.In)
+		}
+	})
+
+	t.Run("path-level parameters merged into operations", func(t *testing.T) {
+		ops := indexByID(spec.Operations)
+
+		// getPet has no operation-level params but should inherit petId from path level
+		getPet := ops["getPet"]
+		if len(getPet.Parameters) != 1 {
+			t.Fatalf("expected 1 parameter (from path level), got %d", len(getPet.Parameters))
+		}
+		if getPet.Parameters[0].Name != "petId" {
+			t.Errorf("expected param name 'petId', got %q", getPet.Parameters[0].Name)
+		}
+		if getPet.Parameters[0].In != domain.ParameterInPath {
+			t.Errorf("expected param in 'path', got %q", getPet.Parameters[0].In)
+		}
+
+		// deletePet should also inherit petId from path level
+		deletePet := ops["deletePet"]
+		if len(deletePet.Parameters) != 1 {
+			t.Fatalf("expected 1 parameter (from path level), got %d", len(deletePet.Parameters))
+		}
+		if deletePet.Parameters[0].Name != "petId" {
+			t.Errorf("expected param name 'petId', got %q", deletePet.Parameters[0].Name)
 		}
 	})
 }

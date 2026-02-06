@@ -55,17 +55,18 @@ paths:
         "201":
           description: Pet created
   /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        description: The pet ID
+        schema:
+          type: integer
     get:
       operationId: getPet
       summary: Get a pet by ID
       tags:
         - pets
-      parameters:
-        - name: petId
-          in: path
-          required: true
-          schema:
-            type: integer
       responses:
         "200":
           description: A single pet
@@ -80,15 +81,9 @@ paths:
                     type: string
     delete:
       operationId: deletePet
-      summary: Delete a pet
+      summary: ""
       tags:
         - pets
-      parameters:
-        - name: petId
-          in: path
-          required: true
-          schema:
-            type: integer
       responses:
         "204":
           description: Pet deleted
