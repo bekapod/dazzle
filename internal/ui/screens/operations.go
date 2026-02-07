@@ -125,9 +125,24 @@ func (s *OperationsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.toggleFocus()
 			return s, nil
 		}
+		// Detail panel has no text input, so 'q' always means quit.
+		if s.focus == focusDetail && msg.String() == "q" {
+			return s, tea.Quit
+		}
 		// Route key messages based on which panel is focused.
 		var cmd tea.Cmd
 		if s.focus == focusDetail {
+			cmd = s.detail.Update(msg)
+		} else {
+			s.list, cmd = s.list.Update(msg)
+			s.syncDetail()
+		}
+		return s, cmd
+
+	case tea.MouseMsg:
+		// Route mouse scroll to whichever panel the cursor is over.
+		var cmd tea.Cmd
+		if s.panelAt(msg.X) == focusDetail {
 			cmd = s.detail.Update(msg)
 		} else {
 			s.list, cmd = s.list.Update(msg)
@@ -153,7 +168,7 @@ func (s *OperationsScreen) View() string {
 	detailWidth := s.width - listWidth
 	contentH := max(1, s.height-2)
 	listContentW := max(1, listWidth-2)
-	detailContentW := max(1, detailWidth-2)
+	detailContentW := max(1, detailWidth-2) // border (2); padding is inside Width
 
 	var activeBorder, inactiveBorder lipgloss.Style
 	activeBorder = lipgloss.NewStyle().
@@ -168,10 +183,10 @@ func (s *OperationsScreen) View() string {
 	var listBorder, detailBorder lipgloss.Style
 	if s.focus == focusList {
 		listBorder = activeBorder.Width(listContentW)
-		detailBorder = inactiveBorder.Width(detailContentW)
+		detailBorder = inactiveBorder.Width(detailContentW).PaddingLeft(1).PaddingRight(1)
 	} else {
 		listBorder = inactiveBorder.Width(listContentW)
-		detailBorder = activeBorder.Width(detailContentW)
+		detailBorder = activeBorder.Width(detailContentW).PaddingLeft(1).PaddingRight(1)
 	}
 
 	listView := listBorder.Render(s.list.View())
@@ -190,8 +205,17 @@ func (s *OperationsScreen) layoutPanels() {
 	contentH := max(1, s.height-2)
 
 	// Account for border (1 char each side), clamped to avoid negative sizes.
+	// Detail panel also has 1 char horizontal padding on each side.
 	s.list.SetSize(max(1, listWidth-2), contentH)
-	s.detail.SetSize(max(1, detailWidth-2), contentH)
+	s.detail.SetSize(max(1, detailWidth-4), contentH)
+}
+
+// panelAt returns which panel occupies the given x coordinate.
+func (s *OperationsScreen) panelAt(x int) panelFocus {
+	if x >= s.listWidth() {
+		return focusDetail
+	}
+	return focusList
 }
 
 func (s *OperationsScreen) toggleFocus() {

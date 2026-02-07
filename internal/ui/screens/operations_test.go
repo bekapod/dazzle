@@ -227,6 +227,41 @@ func TestOperationsScreen_EmptyFilterClearsDetail(t *testing.T) {
 	}
 }
 
+func TestOperationsScreen_QuitFromDetailFocus(t *testing.T) {
+	s := screens.NewOperationsScreen(testSpec(), &stubOpService{})
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	// Tab to focus the detail panel.
+	s.Update(tea.KeyMsg{Type: tea.KeyTab})
+
+	// 'q' should produce a quit command.
+	_, cmd := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd == nil {
+		t.Fatal("expected quit command from 'q' in detail focus")
+	}
+	msg := cmd()
+	if _, ok := msg.(tea.QuitMsg); !ok {
+		t.Errorf("expected tea.QuitMsg, got %T", msg)
+	}
+}
+
+func TestOperationsScreen_MouseScrollRoutesToHoveredPanel(t *testing.T) {
+	s := screens.NewOperationsScreen(testSpec(), &stubOpService{})
+	// Use a short height so the detail panel content overflows and is scrollable.
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 10})
+
+	viewBefore := s.View()
+
+	// Mouse wheel over the detail panel area (x > listWidth = 120/3 = 40).
+	// This should scroll the detail viewport, changing its visible content.
+	s.Update(tea.MouseMsg{X: 80, Y: 5, Action: tea.MouseActionPress, Button: tea.MouseButtonWheelDown})
+
+	viewAfter := s.View()
+	if viewBefore == viewAfter {
+		t.Error("expected detail panel to scroll when mouse wheel is over it")
+	}
+}
+
 func TestOperationsScreen_ResizePropagates(t *testing.T) {
 	s := screens.NewOperationsScreen(testSpec(), &stubOpService{})
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
