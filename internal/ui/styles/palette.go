@@ -8,6 +8,7 @@ var (
 	Subtext1 = lipgloss.AdaptiveColor{Light: "#5c5f77", Dark: "#b8c0e0"}
 	Subtext0 = lipgloss.AdaptiveColor{Light: "#6c6f85", Dark: "#a5adcb"}
 	Overlay1 = lipgloss.AdaptiveColor{Light: "#8c8fa1", Dark: "#8087a2"}
+	Surface0 = lipgloss.AdaptiveColor{Light: "#ccd0da", Dark: "#363a4f"}
 	Surface1 = lipgloss.AdaptiveColor{Light: "#bcc0cc", Dark: "#494d64"}
 	Base     = lipgloss.AdaptiveColor{Light: "#eff1f5", Dark: "#24273a"}
 

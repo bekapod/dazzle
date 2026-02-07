@@ -10,6 +10,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -22,7 +23,7 @@ type DetailPanel struct {
 }
 
 func NewDetailPanel(width, height int) *DetailPanel {
-	vp := viewport.New(width, height)
+	vp := viewport.New(max(1, width-1), height)
 	return &DetailPanel{
 		viewport: vp,
 		width:    width,
@@ -45,7 +46,7 @@ func (d *DetailPanel) Clear() {
 func (d *DetailPanel) SetSize(width, height int) {
 	d.width = width
 	d.height = height
-	d.viewport.Width = width
+	d.viewport.Width = max(1, width-1) // reserve 1 col for scrollbar
 	d.viewport.Height = height
 	if d.op != nil {
 		d.viewport.SetContent(d.renderContent())
@@ -62,7 +63,32 @@ func (d *DetailPanel) View() string {
 	if d.op == nil {
 		return styles.Muted.Render("Select an operation to view details")
 	}
-	return d.viewport.View()
+	return lipgloss.JoinHorizontal(lipgloss.Top, d.viewport.View(), d.renderScrollbar())
+}
+
+func (d *DetailPanel) renderScrollbar() string {
+	total := d.viewport.TotalLineCount()
+	visible := d.viewport.VisibleLineCount()
+	showThumb := total > visible
+	thumbH := 0
+	thumbTop := 0
+	if showThumb {
+		thumbH = max(1, d.height*visible/total)
+		thumbTop = int(float64(d.height-thumbH) * d.viewport.ScrollPercent())
+	}
+
+	var b strings.Builder
+	for i := range d.height {
+		if i > 0 {
+			b.WriteByte('\n')
+		}
+		if showThumb && i >= thumbTop && i < thumbTop+thumbH {
+			b.WriteString(lipgloss.NewStyle().Foreground(styles.Overlay1).Render("┃"))
+		} else {
+			b.WriteString(" ")
+		}
+	}
+	return b.String()
 }
 
 func (d *DetailPanel) renderContent() string {
@@ -86,7 +112,7 @@ func (d *DetailPanel) renderContent() string {
 
 	if op.Description != "" {
 		b.WriteString("\n")
-		b.WriteString(styles.Muted.Render(op.Description))
+		b.WriteString(renderMarkdown(op.Description, max(1, d.viewport.Width-2)))
 		b.WriteString("\n")
 	}
 
@@ -97,7 +123,7 @@ func (d *DetailPanel) renderContent() string {
 		b.WriteString("\n")
 	} else {
 		for _, p := range op.Parameters {
-			b.WriteString(renderParameter(p))
+			b.WriteString(renderParameter(p, d.viewport.Width))
 		}
 	}
 
@@ -107,7 +133,7 @@ func (d *DetailPanel) renderContent() string {
 		b.WriteString(styles.Muted.Render("  None"))
 		b.WriteString("\n")
 	} else {
-		b.WriteString(renderRequestBody(op.RequestBody))
+		b.WriteString(renderRequestBody(op.RequestBody, d.viewport.Width))
 	}
 
 	b.WriteString("\n")
@@ -126,7 +152,7 @@ func sectionHeader(title string) string {
 	return styles.Title.Render(title) + "\n"
 }
 
-func renderParameter(p domain.Parameter) string {
+func renderParameter(p domain.Parameter, width int) string {
 	var parts []string
 	parts = append(parts, lipgloss.NewStyle().Bold(true).Render(p.Name))
 	parts = append(parts, styles.Muted.Render(string(p.In)))
@@ -141,18 +167,20 @@ func renderParameter(p domain.Parameter) string {
 
 	line := "  " + strings.Join(parts, "  ")
 	if p.Description != "" {
-		line += "\n    " + styles.Muted.Render(p.Description)
+		desc := renderMarkdown(p.Description, max(1, width-6))
+		line += "\n" + indent(desc, "    ")
 	}
 	return line + "\n"
 }
 
-func renderRequestBody(rb *domain.RequestBody) string {
+func renderRequestBody(rb *domain.RequestBody, width int) string {
 	var b strings.Builder
 	if rb.Required {
 		b.WriteString("  " + lipgloss.NewStyle().Foreground(styles.Red).Render("required") + "\n")
 	}
 	if rb.Description != "" {
-		b.WriteString("  " + styles.Muted.Render(rb.Description) + "\n")
+		desc := renderMarkdown(rb.Description, max(1, width-4))
+		b.WriteString(indent(desc, "  ") + "\n")
 	}
 
 	for _, contentType := range sortedKeys(rb.Content) {
@@ -233,6 +261,34 @@ func renderObjectProperties(s *domain.Schema, indent string) string {
 		b.WriteString(line + "\n")
 	}
 	return b.String()
+}
+
+// indent prepends prefix to every line of text.
+func indent(text, prefix string) string {
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = prefix + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderMarkdown renders text as terminal markdown using glamour. If rendering
+// fails, the original text is returned as-is.
+func renderMarkdown(text string, width int) string {
+	r, err := glamour.NewTermRenderer(
+		glamour.WithStyles(styles.MarkdownStyle()),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return text
+	}
+	out, err := r.Render(text)
+	if err != nil {
+		return text
+	}
+	return strings.TrimRight(out, "\n")
 }
 
 func sortedKeys[V any](m map[string]V) []string {

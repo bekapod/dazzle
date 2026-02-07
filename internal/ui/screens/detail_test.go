@@ -1,12 +1,15 @@
 package screens_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
 	"dazzle/internal/domain"
 	"dazzle/internal/ui/screens"
 )
+
+var ansiRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
 func fullOperation() domain.Operation {
 	return domain.Operation{
@@ -88,7 +91,9 @@ func TestDetailPanel_RendersSummaryAndDescription(t *testing.T) {
 	if !strings.Contains(view, "Create a pet") {
 		t.Error("expected summary in view")
 	}
-	if !strings.Contains(view, "Creates a new pet in the store") {
+	// Glamour inserts ANSI codes between words; strip them before checking.
+	plain := ansiRe.ReplaceAllString(view, "")
+	if !strings.Contains(plain, "Creates a new pet in the store") {
 		t.Error("expected description in view")
 	}
 }
@@ -105,7 +110,9 @@ func TestDetailPanel_RendersParameters(t *testing.T) {
 	if !strings.Contains(view, "string") {
 		t.Error("expected parameter type in view")
 	}
-	if !strings.Contains(view, "Trace ID") {
+	// Glamour inserts ANSI codes between words; strip them before checking.
+	plain := ansiRe.ReplaceAllString(view, "")
+	if !strings.Contains(plain, "Trace ID") {
 		t.Error("expected parameter description in view")
 	}
 }
@@ -164,6 +171,23 @@ func TestDetailPanel_NoOperationShowsPlaceholder(t *testing.T) {
 
 	if !strings.Contains(view, "Select an operation") {
 		t.Error("expected placeholder text when no operation is set")
+	}
+}
+
+func TestDetailPanel_ScrollbarVisibility(t *testing.T) {
+	// Tall panel — all content fits, no scrollbar thumb.
+	d := screens.NewDetailPanel(80, 200)
+	d.SetOperation(fullOperation())
+	view := d.View()
+	if strings.Contains(view, "┃") {
+		t.Error("expected no scrollbar thumb when all content is visible")
+	}
+
+	// Short panel — content overflows, scrollbar thumb appears.
+	d.SetSize(80, 5)
+	view = d.View()
+	if !strings.Contains(view, "┃") {
+		t.Error("expected scrollbar thumb when content overflows")
 	}
 }
 
