@@ -27,9 +27,9 @@ func (r *Repository) Load(ctx context.Context, source string) (*domain.Spec, err
 		return nil, fmt.Errorf("loading spec from %s: %w", source, err)
 	}
 
-	if err := doc.Validate(ctx); err != nil {
-		return nil, fmt.Errorf("validating spec: %w", err)
-	}
+	// Skip strict validation — as a spec browser we should display whatever
+	// the loader can parse rather than rejecting real-world specs with minor
+	// violations (e.g. extra sibling fields alongside $ref).
 
 	return adaptSpec(doc), nil
 }
