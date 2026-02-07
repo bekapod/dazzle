@@ -62,9 +62,20 @@ func (d operationDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	}
 }
 
-// OperationsScreen displays a filterable list of API operations.
+type panelFocus int
+
+const (
+	focusList panelFocus = iota
+	focusDetail
+)
+
+// OperationsScreen displays a split-pane view: filterable operation list
+// on the left, operation detail on the right.
 type OperationsScreen struct {
 	list   list.Model
+	detail *DetailPanel
+	focus  panelFocus
+	lastID string
 	width  int
 	height int
 }
@@ -88,7 +99,13 @@ func NewOperationsScreen(spec *domain.Spec, opSvc domain.OperationService) *Oper
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = styles.Title
 
-	return &OperationsScreen{list: l}
+	s := &OperationsScreen{
+		list:   l,
+		detail: NewDetailPanel(0, 0),
+	}
+
+	s.syncDetail()
+	return s
 }
 
 func (s *OperationsScreen) Name() string { return "operations" }
@@ -96,17 +113,105 @@ func (s *OperationsScreen) Name() string { return "operations" }
 func (s *OperationsScreen) Init() tea.Cmd { return nil }
 
 func (s *OperationsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if msg, ok := msg.(tea.WindowSizeMsg); ok {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
 		s.width = msg.Width
 		s.height = msg.Height
-		s.list.SetSize(msg.Width, msg.Height)
+		s.layoutPanels()
+		return s, nil
+
+	case tea.KeyMsg:
+		if msg.String() == "tab" {
+			s.toggleFocus()
+			return s, nil
+		}
+		// Route key messages based on which panel is focused.
+		var cmd tea.Cmd
+		if s.focus == focusDetail {
+			cmd = s.detail.Update(msg)
+		} else {
+			s.list, cmd = s.list.Update(msg)
+			s.syncDetail()
+		}
+		return s, cmd
 	}
 
+	// Non-key messages (e.g. FilterMatchesMsg) always go to the list so it
+	// can process async results regardless of which panel is focused.
 	var cmd tea.Cmd
 	s.list, cmd = s.list.Update(msg)
+	s.syncDetail()
 	return s, cmd
 }
 
 func (s *OperationsScreen) View() string {
-	return s.list.View()
+	if s.width == 0 {
+		return ""
+	}
+
+	listWidth := s.listWidth()
+	detailWidth := s.width - listWidth
+	contentH := max(1, s.height-2)
+	listContentW := max(1, listWidth-2)
+	detailContentW := max(1, detailWidth-2)
+
+	var activeBorder, inactiveBorder lipgloss.Style
+	activeBorder = lipgloss.NewStyle().
+		Height(contentH).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Blue)
+	inactiveBorder = lipgloss.NewStyle().
+		Height(contentH).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Surface1)
+
+	var listBorder, detailBorder lipgloss.Style
+	if s.focus == focusList {
+		listBorder = activeBorder.Width(listContentW)
+		detailBorder = inactiveBorder.Width(detailContentW)
+	} else {
+		listBorder = inactiveBorder.Width(listContentW)
+		detailBorder = activeBorder.Width(detailContentW)
+	}
+
+	listView := listBorder.Render(s.list.View())
+	detailView := detailBorder.Render(s.detail.View())
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, listView, detailView)
+}
+
+func (s *OperationsScreen) listWidth() int {
+	return s.width / 3
+}
+
+func (s *OperationsScreen) layoutPanels() {
+	listWidth := s.listWidth()
+	detailWidth := s.width - listWidth
+	contentH := max(1, s.height-2)
+
+	// Account for border (1 char each side), clamped to avoid negative sizes.
+	s.list.SetSize(max(1, listWidth-2), contentH)
+	s.detail.SetSize(max(1, detailWidth-2), contentH)
+}
+
+func (s *OperationsScreen) toggleFocus() {
+	if s.focus == focusList {
+		s.focus = focusDetail
+	} else {
+		s.focus = focusList
+	}
+}
+
+func (s *OperationsScreen) syncDetail() {
+	item, ok := s.list.SelectedItem().(operationItem)
+	if !ok {
+		s.lastID = ""
+		s.detail.Clear()
+		return
+	}
+	if item.op.ID == s.lastID {
+		return
+	}
+	s.lastID = item.op.ID
+	s.detail.SetOperation(item.op)
 }

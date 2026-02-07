@@ -36,6 +36,12 @@ func (d *DetailPanel) SetOperation(op domain.Operation) {
 	d.viewport.GotoTop()
 }
 
+func (d *DetailPanel) Clear() {
+	d.op = nil
+	d.viewport.SetContent("")
+	d.viewport.GotoTop()
+}
+
 func (d *DetailPanel) SetSize(width, height int) {
 	d.width = width
 	d.height = height
